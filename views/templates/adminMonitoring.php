@@ -1,7 +1,7 @@
 <h1>Page de Monitoring</h1>
 
 <h2>Articles</h2>
-<table>
+<table border="1" cellpadding="10" cellspacing="0">
     <tr>
         <th>ID</th>
         <th>Titre</th>
@@ -23,7 +23,7 @@
 </table>
 
 <h2>Commentaires</h2>
-<table>
+<table border="1" cellpadding="10" cellspacing="0">
     <tr>
         <th>ID</th>
         <th>Article ID</th>
