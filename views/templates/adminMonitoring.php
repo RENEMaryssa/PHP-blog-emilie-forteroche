@@ -6,9 +6,9 @@
         <th>ID</th>
         <th>Titre</th>
         <th>Auteur</th>
+        <th>Vues</th>
         <th>Date création</th>
         <th>Date modification</th>
-        <th>Vues</th>
     </tr>
     <?php foreach($articles as $article): ?>
     <tr>
