@@ -19,3 +19,4 @@
 </div>
 
 <a class="submit" href="index.php?action=showUpdateArticleForm">Ajouter un article</a>
+<a class="submit" href="index.php?action=showMonitoring">Monitoring</a>
