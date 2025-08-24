@@ -1,4 +1,4 @@
-<?php 
+<?php  
     /** 
      * Affichage de la partie admin : liste des articles avec un bouton "modifier" pour chacun. 
      * Et un formulaire pour ajouter un article. 
@@ -19,4 +19,5 @@
 </div>
 
 <a class="submit" href="index.php?action=showUpdateArticleForm">Ajouter un article</a>
+&nbsp;
 <a class="submit" href="index.php?action=showMonitoring">Monitoring</a>
