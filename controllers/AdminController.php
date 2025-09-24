@@ -184,24 +184,90 @@ class AdminController
      * @return void
      */
     public function showMonitoring(): void
-    {
-        $this->checkIfUserIsConnected();
+{
+    $this->checkIfUserIsConnected();
 
-        // Récupération des données pour le monitoring
-        $articleManager = new ArticleManager();
-        $commentManager = new CommentManager();
-        $userManager = new UserManager(); // si tu as une table users
+    $articleManager = new ArticleManager();
+    $commentManager = new CommentManager();
+    $userManager = new UserManager();
 
-        $articles = $articleManager->getAllArticles();
-        $comments = $commentManager->getAllComments();
-        $users = $userManager->getAllUsers();
+    $articles = $articleManager->getAllArticles();
+    $comments = $commentManager->getAllComments();
+    $users = $userManager->getAllUsers();
 
-        // Appel de la vue
-        $view = new View("Monitoring Admin");
-        $view->render("adminMonitoring", [
-            'articles' => $articles,
-            'comments' => $comments,
-            'users' => $users
-        ]);
-    }
+    // Paramètres de tri
+    $table = $_GET['table'] ?? 'articles';
+    $sort  = $_GET['sort'] ?? 'id';
+    $order = $_GET['order'] ?? 'asc';
+
+    // Fonction de tri générique
+    $sortData = function (&$data, $sort, $order, $type = 'article') {
+        usort($data, function ($a, $b) use ($sort, $order, $type) {
+            switch ($type) {
+                case 'article':
+                    $valA = match($sort) {
+                        'title' => $a->getTitle(),
+                        'views' => $a->getViews(),
+                        'dateCreation' => $a->getDateCreation()->getTimestamp(),
+                        'dateUpdate' => $a->getDateUpdate()?->getTimestamp() ?? 0,
+                        default => $a->getId(),
+                    };
+                    $valB = match($sort) {
+                        'title' => $b->getTitle(),
+                        'views' => $b->getViews(),
+                        'dateCreation' => $b->getDateCreation()->getTimestamp(),
+                        'dateUpdate' => $b->getDateUpdate()?->getTimestamp() ?? 0,
+                        default => $b->getId(),
+                    };
+                    break;
+
+                case 'comment':
+                    $valA = match($sort) {
+                        'idArticle' => $a->getIdArticle(),
+                        'pseudo' => $a->getPseudo(),
+                        'dateCreation' => $a->getDateCreation()->getTimestamp(),
+                        default => $a->getId(),
+                    };
+                    $valB = match($sort) {
+                        'idArticle' => $b->getIdArticle(),
+                        'pseudo' => $b->getPseudo(),
+                        'dateCreation' => $b->getDateCreation()->getTimestamp(),
+                        default => $b->getId(),
+                    };
+                    break;
+
+                case 'user':
+                    $valA = match($sort) {
+                        'pseudo' => $a->getPseudo(),
+                        'email' => $a->getEmail(),
+                        default => $a->getId(),
+                    };
+                    $valB = match($sort) {
+                        'pseudo' => $b->getPseudo(),
+                        'email' => $b->getEmail(),
+                        default => $b->getId(),
+                    };
+                    break;
+            }
+            return $order === 'asc' ? $valA <=> $valB : $valB <=> $valA;
+        });
+    };
+
+    // Appliquer le tri uniquement sur la table sélectionnée
+    if ($table === 'articles') $sortData($articles, $sort, $order, 'article');
+    if ($table === 'comments') $sortData($comments, $sort, $order, 'comment');
+    if ($table === 'users')    $sortData($users, $sort, $order, 'user');
+
+    // Appel de la vue
+    $view = new View("Monitoring Admin");
+    $view->render("adminMonitoring", [
+        'articles' => $articles,
+        'comments' => $comments,
+        'users' => $users,
+        'table' => $table,
+        'sort' => $sort,
+        'order' => $order
+    ]);
+}
+
 }
