@@ -74,6 +74,11 @@ try {
             $adminController->deleteArticle();
             break;
 
+        case 'deleteComment':
+            $adminController = new AdminController();
+            $adminController->deleteComment();
+            break;
+
         case 'showMonitoring':
             $adminController = new AdminController();
             $adminController->showMonitoring();

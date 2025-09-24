@@ -184,90 +184,114 @@ class AdminController
      * @return void
      */
     public function showMonitoring(): void
-{
-    $this->checkIfUserIsConnected();
+    {
+        $this->checkIfUserIsConnected();
 
-    $articleManager = new ArticleManager();
-    $commentManager = new CommentManager();
-    $userManager = new UserManager();
+        // Managers
+        $articleManager = new ArticleManager();
+        $commentManager = new CommentManager();
 
-    $articles = $articleManager->getAllArticles();
-    $comments = $commentManager->getAllComments();
-    $users = $userManager->getAllUsers();
+        // Données brutes
+        $articles = $articleManager->getAllArticles();
+        $comments = $commentManager->getAllComments();
 
-    // Paramètres de tri
-    $table = $_GET['table'] ?? 'articles';
-    $sort  = $_GET['sort'] ?? 'id';
-    $order = $_GET['order'] ?? 'asc';
+        // Paramètres de tri
+        $table = $_GET['table'] ?? 'articles';
+        $sort  = $_GET['sort'] ?? ($table === 'articles' ? 'title' : 'pseudo');
+        $order = $_GET['order'] ?? 'asc';
 
-    // Fonction de tri générique
-    $sortData = function (&$data, $sort, $order, $type = 'article') {
-        usort($data, function ($a, $b) use ($sort, $order, $type) {
-            switch ($type) {
-                case 'article':
-                    $valA = match($sort) {
-                        'title' => $a->getTitle(),
-                        'views' => $a->getViews(),
-                        'dateCreation' => $a->getDateCreation()->getTimestamp(),
-                        'dateUpdate' => $a->getDateUpdate()?->getTimestamp() ?? 0,
-                        default => $a->getId(),
-                    };
-                    $valB = match($sort) {
-                        'title' => $b->getTitle(),
-                        'views' => $b->getViews(),
-                        'dateCreation' => $b->getDateCreation()->getTimestamp(),
-                        'dateUpdate' => $b->getDateUpdate()?->getTimestamp() ?? 0,
-                        default => $b->getId(),
-                    };
-                    break;
+        // Fonction générique de tri
+        $sortData = function (&$data, $sort, $order, $type = 'article') {
+            usort($data, function ($a, $b) use ($sort, $order, $type) {
+                switch ($type) {
+                    case 'article':
+                        $valA = match ($sort) {
+                            'title' => $a->getTitle(),
+                            'views' => $a->getViews(),
+                            'dateCreation' => $a->getDateCreation()->getTimestamp(),
+                            'dateUpdate' => $a->getDateUpdate()?->getTimestamp() ?? 0,
+                            default => $a->getId(),
+                        };
+                        $valB = match ($sort) {
+                            'title' => $b->getTitle(),
+                            'views' => $b->getViews(),
+                            'dateCreation' => $b->getDateCreation()->getTimestamp(),
+                            'dateUpdate' => $b->getDateUpdate()?->getTimestamp() ?? 0,
+                            default => $b->getId(),
+                        };
+                        break;
 
-                case 'comment':
-                    $valA = match($sort) {
-                        'idArticle' => $a->getIdArticle(),
-                        'pseudo' => $a->getPseudo(),
-                        'dateCreation' => $a->getDateCreation()->getTimestamp(),
-                        default => $a->getId(),
-                    };
-                    $valB = match($sort) {
-                        'idArticle' => $b->getIdArticle(),
-                        'pseudo' => $b->getPseudo(),
-                        'dateCreation' => $b->getDateCreation()->getTimestamp(),
-                        default => $b->getId(),
-                    };
-                    break;
+                    case 'comment':
+                        $valA = match ($sort) {
+                            'pseudo' => $a->getPseudo(),
+                            'dateCreation' => $a->getDateCreation()->getTimestamp(),
+                            default => $a->getId(),
+                        };
+                        $valB = match ($sort) {
+                            'pseudo' => $b->getPseudo(),
+                            'dateCreation' => $b->getDateCreation()->getTimestamp(),
+                            default => $b->getId(),
+                        };
+                        break;
 
-                case 'user':
-                    $valA = match($sort) {
-                        'pseudo' => $a->getPseudo(),
-                        'email' => $a->getEmail(),
-                        default => $a->getId(),
-                    };
-                    $valB = match($sort) {
-                        'pseudo' => $b->getPseudo(),
-                        'email' => $b->getEmail(),
-                        default => $b->getId(),
-                    };
-                    break;
-            }
-            return $order === 'asc' ? $valA <=> $valB : $valB <=> $valA;
-        });
-    };
+                    default:
+                        $valA = $a->getId();
+                        $valB = $b->getId();
+                }
+                return $order === 'asc' ? $valA <=> $valB : $valB <=> $valA;
+            });
+        };
 
-    // Appliquer le tri uniquement sur la table sélectionnée
-    if ($table === 'articles') $sortData($articles, $sort, $order, 'article');
-    if ($table === 'comments') $sortData($comments, $sort, $order, 'comment');
-    if ($table === 'users')    $sortData($users, $sort, $order, 'user');
+        // Appliquer le tri
+        if ($table === 'articles') $sortData($articles, $sort, $order, 'article');
+        if ($table === 'comments') $sortData($comments, $sort, $order, 'comment');
 
-    // Appel de la vue
-    $view = new View("Monitoring Admin");
-    $view->render("adminMonitoring", [
-        'articles' => $articles,
-        'comments' => $comments,
-        'users' => $users,
-        'table' => $table,
-        'sort' => $sort,
-        'order' => $order
-    ]);
-}
+        // Pagination pour les commentaires
+        $perPage = 10;
+        $page = $_GET['page'] ?? 1;
+        $totalComments = count($comments);
+        $totalPages = ceil($totalComments / $perPage);
+        $start = ($page - 1) * $perPage;
+        $commentsPage = array_slice($comments, $start, $perPage);
 
+        // Appel de la vue
+        $view = new View("Monitoring Admin");
+        $view->render("adminMonitoring", [
+            'articles' => $articles,
+            'comments' => $comments,         // liste complète si besoin
+            'commentsPage' => $commentsPage, // 🔥 page courante
+            'totalPages' => $totalPages,
+            'page' => $page,
+            'table' => $table,
+            'sort' => $sort,
+            'order' => $order
+        ]);
+    }
+
+    /**
+     * Supprime un commentaire.
+     * @return void
+     */
+    public function deleteComment(): void
+    {
+        $this->checkIfUserIsConnected();
+
+        $id = Utils::request('id', -1);
+        if ($id == -1) {
+            throw new Exception("Aucun commentaire sélectionné pour la suppression.");
+        }
+
+        // Créer un objet Comment avec l'id
+        $comment = new Comment(['id' => $id]);
+
+        $commentManager = new CommentManager();
+        $success = $commentManager->deleteComment($comment);
+
+        if (!$success) {
+            throw new Exception("Impossible de supprimer le commentaire.");
+        }
+
+        // Rediriger vers la page de monitoring sur les commentaires
+        Utils::redirect("showMonitoring&table=comments");
+    }
 }
