@@ -32,7 +32,7 @@
         background-color: rgba(0, 0, 0, 0.05);
         /* un peu plus foncé pour contraste */
     }
-
+    /* Optionnel : survol pour plus de lisibilité */
     table.adminArticle tbody tr:hover {
         background-color: var(--commentColor);
         color: white;
